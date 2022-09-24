@@ -7,24 +7,37 @@ import 'package:provider_test/model/movie.dart';
 import 'package:provider_test/service/api_service.dart';
 
 class MovieViewModel extends ChangeNotifier{
-  bool _onLoading = false;
-  bool get onLoading => _onLoading;
-  set onLoading(bool condition)=>_onLoading=condition;
+  bool onLoading = false;
+  Movie movies = Movie();
+
   Future<Movie> getMovie()async{
     try{
       onLoading=true;
+      notifyListeners();
+
       var jsonMovie = await apiService.get(url: 'api?s=batman');
       if(jsonMovie!='error' && jsonMovie!='timeout'){
-        log('data : $jsonMovie');
+        log('json : $jsonMovie');
+        movies = Movie.fromJson(jsonDecode(jsonMovie));
+
+        /// set loading to off
+        await Future.delayed(const Duration(seconds: 1),(){
+          onLoading=false;
+        });
+        notifyListeners();
+
+       return movies;
+      }else{
+        return throw 'error';
       }
 
-      Future.delayed(const Duration(seconds: 1),()=>onLoading=false);
-      throw 'testing';
+
     }catch(e){
       ///if something error
       log('error on fetch movie : $e');
       Future.delayed(const Duration(seconds: 1),()=>onLoading=false);
-      throw 'error';
+      notifyListeners();
+      return throw 'error';
     }
   }
 }
